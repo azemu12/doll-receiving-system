@@ -209,11 +209,14 @@ def test_match_api_returns_all_active_skus_sorted(monkeypatch):
     )
     assert resp.status_code == 200, resp.text
     data = resp.json()
-    cands = data["candidates"]
-
-    # 10. 返回全部 8 个 active SKU，而不是只返回 5 个；inactive 不出现
+    # 10. 返回全部测试 SKU（8个），而不是只返回 5 个；inactive 不出现
+    cands = only_test_skus(data["candidates"])
     assert len(cands) == DIM
-    assert all(c["sku"] != f"{SKU_PREFIX}099" for c in cands)
+    # active 之外：真实业务的 inactive SKU 同样不出现在完整候选里
+    all_skus = [c["sku"] for c in data["candidates"]]
+    assert f"{SKU_PREFIX}099" not in all_skus
+    # 全部 active SKU（含本用例之外）都应可被人工选择，且 inactive 一律排除
+    assert len(all_skus) >= DIM
 
     # 11. 按 similarity 降序
     sims = [c["similarity"] for c in cands]
@@ -255,8 +258,21 @@ def client_get_inventory_count() -> int:
         return int(db.execute(select(func.count()).select_from(Inventory)).scalar())
 
 
+def only_test_skus(cands: list) -> list:
+    """从候选里筛出本用例自己创建的 SKU。
+
+    数据库是共享的开发库（存在 S001 等真实业务 SKU），第5阶段起 /vision/match
+    会返回【全部】active SKU，因此断言必须只看本用例创建的这批，避免受外部数据影响。
+    """
+    return [c for c in cands if c["sku"].startswith(SKU_PREFIX)]
+
+
 def test_match_without_any_embedding_gives_hint(monkeypatch):
-    """所有 active SKU 都没有 embedding 时，返回明确的建库提示。"""
+    """所有 active SKU 都没有 embedding 时，返回明确的建库提示。
+
+    开发库里可能存在其它带 embedding 的业务 SKU，这里把 has_any_embedding
+    强制为 False，精确复现「图库整体未建」的场景。
+    """
     with SessionLocal() as db:
         _create_product(db, 1, embeddings=[])
         db.commit()
@@ -264,6 +280,7 @@ def test_match_without_any_embedding_gives_hint(monkeypatch):
         vision_embedding, "embed_bytes",
         lambda data: np.array(_vec(0), dtype=np.float32),
     )
+    monkeypatch.setattr("app.api.vision.has_any_embedding", lambda db: False)
     resp = client.post(
         "/vision/match",
         files={"file": ("q.png", io.BytesIO(PNG_BYTES), "image/png")},

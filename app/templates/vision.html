@@ -31,16 +31,44 @@
       font-size: 18px;
     }
 
-    header a {
+    header nav a {
       color: #bdc3c7;
       text-decoration: none;
       font-size: 14px;
+      margin-left: 16px;
     }
 
     .container {
-      max-width: 820px;
+      max-width: 1360px;
       margin: 20px auto;
       padding: 0 16px;
+    }
+
+    .workspace {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .col-left {
+      flex: 0 0 420px;
+      max-width: 100%;
+    }
+
+    .col-right {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        flex-direction: column;
+      }
+
+      .col-left {
+        flex: 1 1 auto;
+        width: 100%;
+      }
     }
 
     .card {
@@ -55,17 +83,6 @@
       font-size: 16px;
       margin: 0 0 14px;
       color: #34495e;
-    }
-
-    .upload-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    input[type=file] {
-      font-size: 14px;
     }
 
     .btn {
@@ -90,8 +107,104 @@
       background: #27ae60;
     }
 
+    .btn-warning {
+      background: #e67e22;
+    }
+
     .btn-gray {
       background: #95a5a6;
+    }
+
+    .btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    /* ---------- 摄像头 ---------- */
+    .camera-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #1b2530;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-box video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #1b2530;
+    }
+
+    .camera-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9fb3c8;
+      font-size: 13px;
+      text-align: center;
+      padding: 0 16px;
+      line-height: 1.8;
+      background: #1b2530;
+    }
+
+    .camera-frame {
+      position: absolute;
+      inset: 12%;
+      border: 2px dashed rgba(255, 255, 255, .45);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .cam-status {
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #f4f6f8;
+      color: #607182;
+    }
+
+    .cam-status.error {
+      background: #fdecea;
+      color: #c62828;
+    }
+
+    .cam-status.ok {
+      background: #eaf6ee;
+      color: #1e8449;
+    }
+
+    .cam-status.info {
+      background: #eef4fb;
+      color: #2980b9;
+    }
+
+    .upload-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input[type=file] {
+      font-size: 14px;
     }
 
     .query-preview {
@@ -105,6 +218,7 @@
       border: 1px solid #ecf0f1;
     }
 
+    /* ---------- 候选列表 ---------- */
     .cand-list {
       display: flex;
       flex-direction: column;
@@ -135,8 +249,24 @@
       flex-shrink: 0;
     }
 
+    .cand .noimg {
+      width: 110px;
+      height: 110px;
+      border-radius: 6px;
+      background: #f0f2f5;
+      color: #95a5a6;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      text-align: center;
+      padding: 4px;
+    }
+
     .cand .info {
       flex: 1;
+      min-width: 0;
     }
 
     .cand .title {
@@ -164,6 +294,11 @@
       border-radius: 10px;
       font-size: 12px;
       margin-left: 6px;
+    }
+
+    .cand .sim-none {
+      background: #fdf1e3;
+      color: #b9770e;
     }
 
     .rank {
@@ -218,11 +353,13 @@
       font-size: 12px;
       color: #95a5a6;
       margin-top: 6px;
+      line-height: 1.7;
     }
 
-    .loading {
+    .stat-row {
+      font-size: 13px;
       color: #7f8c8d;
-      font-size: 14px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -231,52 +368,108 @@
   <header>
     <h1>毛绒娃娃 · 视觉识别</h1>
     <nav>
-      <a href="/receive" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">收货登记</a>
-      <a href="/inventory" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">库存查询</a>
-      <a href="/admin/products" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">商品管理</a>
+      <a href="/receive">收货登记</a>
+      <a href="/inventory">库存查询</a>
+      <a href="/admin/products">商品管理</a>
     </nav>
   </header>
   <div class="container">
+    <div class="workspace">
 
-    <div class="card">
-      <h2>上传 / 拍摄娃娃图片</h2>
-      <div class="upload-row">
-        <input type="file" id="file-input" accept="image/*" capture="environment">
-        <button class="btn btn-primary" id="match-btn" onclick="match()">开始识别</button>
-      </div>
-      <div class="hint">支持 jpg / jpeg / png / webp，最大 10MB。手机浏览器可直接调用相机拍照。</div>
-      <div id="msg" class="msg"></div>
-      <div class="query-preview" id="preview-box" style="display:none;">
-        <img id="preview-img" alt="待识别图片">
-      </div>
-    </div>
+      <!-- ============ 左：摄像头 ============ -->
+      <div class="col-left">
+        <div class="card">
+          <h2>电脑摄像头（实时预览）</h2>
+          <div class="camera-box" id="camera-box">
+            <video id="camera-video" playsinline autoplay muted></video>
+            <div class="camera-frame" id="camera-frame" style="display:none;"></div>
+            <div class="camera-placeholder" id="camera-placeholder">
+              摄像头未启动<br>点击「启动摄像头」后在浏览器弹窗中选择「允许」
+            </div>
+          </div>
 
-    <div class="card" id="result-card" style="display:none;">
-      <h2>AI 匹配结果（请人工选择正确款式，系统不会自动选择）</h2>
-      <div id="cand-list" class="cand-list"></div>
-    </div>
+          <div class="cam-status" id="cam-status">摄像头状态：未启动</div>
 
-    <div class="card select-panel" id="select-panel" style="display:none;">
-      <div id="selected-info" class="result"></div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-success" onclick="confirmChoice()">确认结果</button>
-      </div>
-    </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="start-camera-btn" onclick="startCamera()">启动摄像头</button>
+            <button class="btn btn-warning" id="capture-btn" onclick="captureAndMatch()" disabled>拍照识别</button>
+            <button class="btn btn-gray" id="retake-btn" onclick="retake()" disabled>重新拍照</button>
+            <button class="btn btn-gray" id="stop-camera-btn" onclick="stopCamera()" disabled>关闭摄像头</button>
+          </div>
+          <div class="hint">
+            使用浏览器摄像头接口（getUserMedia）。必须通过 http://localhost:8000 或 http://127.0.0.1:8000 访问，
+            浏览器才会允许摄像头权限。默认使用电脑自带摄像头。<br>
+            摄像头不可用时，可用下方「上传图片识别」继续工作。
+          </div>
+        </div>
 
-    <div class="card" id="final-panel" style="display:none;">
-      <h2>识别确认成功</h2>
-      <div id="final-info" class="result"></div>
-      <div class="hint">已确认的 SKU 将进入收货登记：录入该只娃娃的实际回收成本后入库并生成条码。</div>
-      <div style="margin-top:12px; display:flex; gap:10px;">
-        <a class="btn btn-success" id="receive-link" href="#" style="display:none; text-decoration:none; text-align:center; flex:1;">进入收货登记</a>
-        <button class="btn btn-gray" onclick="location.reload()" style="flex:1;">再识别一只</button>
+        <div class="card">
+          <h2>或上传图片识别（备用）</h2>
+          <div class="upload-row">
+            <input type="file" id="file-input" accept="image/*">
+            <button class="btn btn-primary" id="match-btn" onclick="matchUpload()">开始识别</button>
+          </div>
+          <div class="hint">支持 jpg / jpeg / png / webp，最大 {{ max_image_mb }}MB。</div>
+          <div id="msg" class="msg"></div>
+        </div>
       </div>
+
+      <!-- ============ 右：拍摄结果 + 候选 ============ -->
+      <div class="col-right">
+        <div class="card">
+          <h2>最近一次拍摄 / 选择的图片</h2>
+          <div class="query-preview" id="preview-box" style="display:none;">
+            <img id="preview-img" alt="待识别图片">
+          </div>
+          <div class="hint" id="preview-hint">尚未拍摄或上传图片。</div>
+        </div>
+
+        <div class="card" id="result-card" style="display:none;">
+          <h2>AI 匹配结果（请人工选择正确款式，系统不会自动选择）</h2>
+          <div class="stat-row" id="cand-stat"></div>
+          <div id="cand-list" class="cand-list"></div>
+        </div>
+
+        <div class="card select-panel" id="select-panel" style="display:none;">
+          <div id="selected-info" class="result"></div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-success" onclick="confirmChoice()">确认结果</button>
+          </div>
+        </div>
+
+        <div class="card" id="final-panel" style="display:none;">
+          <h2>识别确认成功</h2>
+          <div id="final-info" class="result"></div>
+          <div class="hint">已确认的 SKU 将进入收货登记：录入该只娃娃的实际回收成本后入库并生成条码。</div>
+          <div style="margin-top:12px; display:flex; gap:10px;">
+            <a class="btn btn-success" id="receive-link" href="#" style="display:none; text-decoration:none; text-align:center; flex:1;">进入收货登记</a>
+            <button class="btn btn-gray" onclick="location.reload()" style="flex:1;">再识别一只</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
+  <canvas id="camera-canvas" style="display:none;"></canvas>
+
   <script>
+    const MAX_IMAGE_MB = Number('{{ max_image_mb }}') || 10;
+
     let candidates = [];
     let selected = null; // {type:'sku', ...} 或 {type:'other'}
+    let cameraStream = null;
+    let cameraReady = false;
+
+    const videoEl = document.getElementById('camera-video');
+    const canvasEl = document.getElementById('camera-canvas');
+
+    // SKU 文案来自商品后台，插入 innerHTML 前统一转义（防 XSS）
+    function esc(v) {
+      return String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, function (m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
 
     function showMsg(text, cls) {
       const el = document.getElementById('msg');
@@ -284,30 +477,196 @@
       el.className = 'msg ' + (cls || '');
     }
 
-    // 选择文件后本地预览（不上传，等待点击"开始识别"）
-    document.getElementById('file-input').addEventListener('change', (e) => {
-      const f = e.target.files[0];
-      if (!f) return;
-      const url = URL.createObjectURL(f);
+    function setCamStatus(text, cls) {
+      const el = document.getElementById('cam-status');
+      el.textContent = '摄像头状态：' + text;
+      el.className = 'cam-status ' + (cls || '');
+    }
+
+    /* ==================== 摄像头 ==================== */
+
+    function cameraErrorMessage(err) {
+      const name = (err && err.name) ? err.name : '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        return '摄像头权限被拒绝。请点击浏览器地址栏左侧的摄像头/锁形图标 → 允许摄像头，然后重新点击「启动摄像头」。';
+      }
+      if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        return '未检测到摄像头设备。请确认电脑自带摄像头已启用（Windows：设备管理器 → 摄像机 / 照相机），或改用「上传图片识别」。';
+      }
+      if (name === 'NotReadableError' || name === 'TrackStartError') {
+        return '摄像头被其他程序占用或无法读取画面。请关闭相机、视频会议等正在使用摄像头的软件后重试。';
+      }
+      if (name === 'OverconstrainedError') {
+        return '摄像头不支持请求的分辨率，请重试；仍失败请改用「上传图片识别」。';
+      }
+      if (name === 'SecurityError') {
+        return '浏览器安全策略阻止访问摄像头。请使用 http://localhost:8000 或 http://127.0.0.1:8000 打开本页面。';
+      }
+      if (name === 'AbortError') {
+        return '摄像头启动被中断，请重新点击「启动摄像头」。';
+      }
+      return '摄像头启动失败：' + ((err && err.message) ? err.message : '未知错误') + '。可改用左侧「上传图片识别」。';
+    }
+
+    function updateCameraButtons() {
+      document.getElementById('capture-btn').disabled = !cameraReady;
+      document.getElementById('retake-btn').disabled = !cameraReady;
+      document.getElementById('stop-camera-btn').disabled = !cameraReady;
+      document.getElementById('camera-frame').style.display = cameraReady ? 'block' : 'none';
+      document.getElementById('camera-placeholder').style.display = cameraReady ? 'none' : 'block';
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCamStatus('当前浏览器不支持摄像头接口，请使用 Chrome / Edge 浏览器打开。', 'error');
+        return;
+      }
+      if (!window.isSecureContext) {
+        setCamStatus('非安全上下文，浏览器禁止访问摄像头。请使用 http://localhost:8000 或 http://127.0.0.1:8000 打开。', 'error');
+        return;
+      }
+      setCamStatus('正在启动摄像头，请在浏览器弹窗中点击「允许」…', 'info');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' },
+          audio: false
+        });
+        videoEl.srcObject = cameraStream;
+        await videoEl.play();
+        cameraReady = true;
+        updateCameraButtons();
+        setCamStatus('已就绪（' + videoEl.videoWidth + '×' + videoEl.videoHeight + '），把娃娃放进取景框后点击「拍照识别」。', 'ok');
+      } catch (err) {
+        cameraReady = false;
+        updateCameraButtons();
+        setCamStatus(cameraErrorMessage(err), 'error');
+        stopCamera();
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      videoEl.srcObject = null;
+      cameraReady = false;
+      updateCameraButtons();
+    }
+
+    // 拍照：canvas 抓当前帧 -> JPEG -> 走同一个 /vision/match
+    async function captureAndMatch() {
+      if (!cameraReady || !cameraStream) {
+        setCamStatus('摄像头尚未就绪，请先点击「启动摄像头」。', 'error');
+        return;
+      }
+      const w = videoEl.videoWidth;
+      const h = videoEl.videoHeight;
+      if (!w || !h) {
+        setCamStatus('摄像头画面尚未就绪（分辨率为 0），请稍候再试。', 'error');
+        return;
+      }
+      canvasEl.width = w;
+      canvasEl.height = h;
+      const ctx = canvasEl.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, w, h);
+      const blob = await canvasToJpegBlob(canvasEl);
+      if (!blob || blob.size === 0) {
+        setCamStatus('画面截图失败，未能生成有效图片，请重试。', 'error');
+        return;
+      }
+      const maxBytes = MAX_IMAGE_MB * 1024 * 1024;
+      if (blob.size > maxBytes) {
+        setCamStatus('截图 ' + (blob.size / 1048576).toFixed(1) + 'MB，超过上限 ' + MAX_IMAGE_MB + 'MB，请降低摄像头分辨率或改用上传图片。', 'error');
+        return;
+      }
+      setCamStatus('已拍照（' + (blob.size / 1024).toFixed(0) + 'KB），正在识别…', 'info');
+      showCaptured(blob);
+      await runMatch(blob, 'camera.jpg');
+    }
+
+    function canvasToJpegBlob(canvas) {
+      return new Promise(resolve => {
+        try {
+          canvas.toBlob(resolve, 'image/jpeg', 0.92);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+
+    // 重新拍照：丢弃当前截图与识别结果，回到实时预览
+    function retake() {
+      resetResultPanels();
+      selected = null;
+      document.getElementById('preview-box').style.display = 'none';
+      document.getElementById('preview-img').removeAttribute('src');
+      document.getElementById('preview-hint').textContent = '尚未拍摄或上传图片。';
+      showMsg('');
+      if (cameraReady) {
+        setCamStatus('已就绪，重新摆放娃娃后再次「拍照识别」。', 'ok');
+      } else {
+        setCamStatus('摄像头未启动，请点击「启动摄像头」。', '');
+      }
+    }
+
+    function showCaptured(source) {
+      const url = URL.createObjectURL(source);
       document.getElementById('preview-img').src = url;
       document.getElementById('preview-box').style.display = 'block';
-    });
+      document.getElementById('preview-hint').textContent = '识别结果仅供参考，请人工确认款式。';
+    }
 
-    async function match() {
-      const input = document.getElementById('file-input');
-      if (!input.files || !input.files[0]) { showMsg('请先选择或拍摄一张图片', 'error'); return; }
-      const fd = new FormData();
-      fd.append('file', input.files[0]);
-      showMsg('识别中，请稍候…', 'info');
+    window.addEventListener('beforeunload', stopCamera);
+
+    // 初始状态：摄像头未启动，拍照/重拍/关闭按钮均不可用
+    updateCameraButtons();
+
+    /* ==================== 识别（拍照 / 上传共用） ==================== */
+
+    function resetResultPanels() {
+      candidates = [];
+      selected = null;
       document.getElementById('result-card').style.display = 'none';
       document.getElementById('select-panel').style.display = 'none';
       document.getElementById('final-panel').style.display = 'none';
-      selected = null;
+      document.getElementById('cand-list').innerHTML = '';
+      document.getElementById('receive-link').style.display = 'none';
+      document.getElementById('receive-link').removeAttribute('href');
+    }
+
+    async function matchUpload() {
+      const input = document.getElementById('file-input');
+      if (!input.files || !input.files[0]) { showMsg('请先选择一张图片', 'error'); return; }
+      const file = input.files[0];
+      const maxBytes = MAX_IMAGE_MB * 1024 * 1024;
+      if (file.size > maxBytes) {
+        showMsg('图片 ' + (file.size / 1048576).toFixed(1) + 'MB，超过上限 ' + MAX_IMAGE_MB + 'MB', 'error');
+        return;
+      }
+      await runMatch(file, file.name || 'upload.jpg');
+    }
+
+    async function runMatch(file, filename) {
+      const fd = new FormData();
+      fd.append('file', file, filename);
+      resetResultPanels();
+      const busy = '识别中，请稍候…';
+      showMsg(busy, 'info');
 
       try {
         const res = await fetch('/vision/match', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) { throw new Error(data.detail || '识别失败'); }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = (data && data.detail) ? String(data.detail) : '识别失败';
+          if (detail.indexOf('build_embeddings') >= 0) {
+            // 图库尚未建 Embedding：AI 排序不可用，退化为纯人工选款列表
+            await loadFallbackSkus();
+            showMsg('AI 图库尚未建立 Embedding，已列出全部 SKU 供人工选择。请先在商品管理上传参考图并运行 python -m app.vision.build_embeddings。', 'error');
+            return;
+          }
+          throw new Error(detail);
+        }
         candidates = data.candidates || [];
         renderCandidates();
         showMsg('');
@@ -316,9 +675,35 @@
       }
     }
 
+    // AI 不可用时的兜底：把全部 active SKU 列出来，纯人工选择（无相似度）
+    async function loadFallbackSkus() {
+      try {
+        const res = await fetch('/vision/skus');
+        const data = await res.json();
+        candidates = data.candidates || [];
+        renderCandidates();
+      } catch (err) {
+        showMsg('无法获取候选款式列表：' + err.message, 'error');
+      }
+    }
+
     function renderCandidates() {
       const box = document.getElementById('cand-list');
       box.innerHTML = '';
+
+      if (!candidates.length) {
+        box.innerHTML = '<div class="stat-row">当前没有可选的在售 SKU，请先在商品管理中新增。</div>';
+        document.getElementById('cand-stat').textContent = '';
+        document.getElementById('result-card').style.display = 'block';
+        return;
+      }
+
+      const withSim = candidates.filter(c => c.similarity !== null && c.similarity !== undefined).length;
+      const noSim = candidates.length - withSim;
+      let stat = '共 ' + candidates.length + ' 个可选款式';
+      stat += withSim ? ('，其中 ' + withSim + ' 个有 AI 相似度') : '（AI 相似度不可用，请纯人工比对）';
+      if (noSim) stat += '，' + noSim + ' 个未建立图库排在最末';
+      document.getElementById('cand-stat').textContent = stat;
 
       const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
       candidates.forEach((c, i) => {
@@ -326,18 +711,25 @@
         const div = document.createElement('div');
         div.className = 'cand';
         div.id = 'cand-' + i;
-        div.innerHTML = `
-      <div class="rank">${rankLabel}</div>
-      <img src="${c.reference_image}" alt="参考图">
-      <div class="info">
-        <div class="title">${c.name} ${c.size} ${c.style}<span class="sim">相似度 ${(c.similarity * 100).toFixed(1)}%</span></div>
-        <div class="meta">
-          SKU：${c.sku}<br>
-          售价：<span class="price">${c.sale_price}元</span>（固定售价，来自SKU主档）
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="chooseSku(${i})">选择这个款式</button>
-    `;
+
+        // 有相似度才显示百分比；未建立图库的一律显示"未建立图库"，不伪造数字
+        const hasSim = (c.similarity !== null && c.similarity !== undefined);
+        const simHtml = hasSim
+          ? '<span class="sim">相似度 ' + (c.similarity * 100).toFixed(1) + '%</span>'
+          : '<span class="sim sim-none">' + (c.has_embedding ? '图库需重建' : '未建立图库') + '</span>';
+        const imgHtml = c.reference_image
+          ? '<img src="' + c.reference_image + '" alt="参考图">'
+          : '<div class="noimg">无参考图</div>';
+
+        div.innerHTML =
+          '<div class="rank">' + rankLabel + '</div>' +
+          imgHtml +
+          '<div class="info">' +
+          '<div class="title">' + esc(c.name) + ' ' + esc(c.size) + ' ' + esc(c.style) + simHtml + '</div>' +
+          '<div class="meta">SKU：' + esc(c.sku) + '<br>' +
+          '售价：<span class="price">' + c.sale_price + '元</span>（固定售价，来自SKU主档）</div>' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="chooseSku(' + i + ')">选择这个款式</button>';
         box.appendChild(div);
       });
 
@@ -345,13 +737,12 @@
       const other = document.createElement('div');
       other.className = 'cand other-card';
       other.id = 'cand-other';
-      other.innerHTML = `
-    <div class="info" style="text-align:center;">
-      <div class="title">其他</div>
-      <div class="meta">以上都不是 / 图库中没有这个款式</div>
-    </div>
-    <button class="btn btn-gray" onclick="chooseOther()">选择「其他」</button>
-  `;
+      other.innerHTML =
+        '<div class="info" style="text-align:center;">' +
+        '<div class="title">其他</div>' +
+        '<div class="meta">以上都不是 / 图库中没有这个款式</div>' +
+        '</div>' +
+        '<button class="btn btn-gray" onclick="chooseOther()">选择「其他」</button>';
       box.appendChild(other);
 
       document.getElementById('result-card').style.display = 'block';
@@ -362,11 +753,11 @@
       document.querySelectorAll('.cand').forEach(el => el.classList.remove('selected'));
       document.getElementById('cand-' + i).classList.add('selected');
       const c = selected;
-      document.getElementById('selected-info').innerHTML = `
-    已选择：<br>
-    <strong>${c.name} ${c.size} ${c.style}</strong><br>
-    SKU：${c.sku}<br>
-    固定售价：${c.sale_price}元`;
+      document.getElementById('selected-info').innerHTML =
+        '已选择：<br>' +
+        '<strong>' + esc(c.name) + ' ' + esc(c.size) + ' ' + esc(c.style) + '</strong><br>' +
+        'SKU：' + esc(c.sku) + '<br>' +
+        '固定售价：' + c.sale_price + '元';
       document.getElementById('select-panel').style.display = 'block';
       document.getElementById('final-panel').style.display = 'none';
       document.getElementById('select-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -376,7 +767,7 @@
       selected = { type: 'other' };
       document.querySelectorAll('.cand').forEach(el => el.classList.remove('selected'));
       document.getElementById('cand-other').classList.add('selected');
-      document.getElementById('selected-info').innerHTML = `已选择：<strong>其他</strong>`;
+      document.getElementById('selected-info').innerHTML = '已选择：<strong>其他</strong>';
       document.getElementById('select-panel').style.display = 'block';
       document.getElementById('final-panel').style.display = 'none';
       document.getElementById('select-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -384,18 +775,19 @@
 
     // 纯前端确认：确认后可跳转收货登记页（携带 product_id 自动填入 SKU 信息）
     function confirmChoice() {
-      if (!selected) return;
+      if (!selected) return; // 未人工选择时，不允许进入收货流程
       const info = document.getElementById('final-info');
       const receiveLink = document.getElementById('receive-link');
       if (selected.type === 'other') {
-        info.innerHTML = `已选择：<strong>其他</strong><br>不会创建新的商品记录。`;
+        info.innerHTML = '已选择：<strong>其他</strong><br>不会创建新的商品记录。';
         receiveLink.style.display = 'none';
+        receiveLink.removeAttribute('href');
       } else {
-        info.innerHTML = `
-      SKU：<strong>${selected.sku}</strong><br>
-      商品：<strong>${selected.name} ${selected.size} ${selected.style}</strong><br>
-      售价：<strong>${selected.sale_price}元</strong>（固定售价，收货时不可修改）`;
-        receiveLink.href = `/receive?product_id=${selected.product_id}`;
+        info.innerHTML =
+          'SKU：<strong>' + esc(selected.sku) + '</strong><br>' +
+          '商品：<strong>' + esc(selected.name) + ' ' + esc(selected.size) + ' ' + esc(selected.style) + '</strong><br>' +
+          '售价：<strong>' + selected.sale_price + '元</strong>（固定售价，收货时不可修改）';
+        receiveLink.href = '/receive?product_id=' + selected.product_id;
         receiveLink.style.display = 'inline-block';
       }
       document.getElementById('final-panel').style.display = 'block';

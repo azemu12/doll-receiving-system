@@ -14,6 +14,11 @@
 - 没有任何 embedding 的 SKU 跳过（不报错、不中断）。
 - 所有有 embedding 的 active SKU 都要返回，按相似度倒序，不做 TopN 截断。
 - 本模块只算相似度，绝不自动确认、绝不写库存。
+
+对外两个入口：
+- match_query_embedding：只返回「有 embedding 且倒序」的候选（底层聚合逻辑）；
+- match_all_active_skus：在前者之后补上「未建立图库」的 active SKU，
+  满足「所有 active SKU 都必须能人工选择」的业务要求。
 """
 
 import logging
@@ -39,8 +44,10 @@ class Candidate:
     size: str
     style: str
     sale_price: int
-    similarity: float
+    similarity: float | None  # None = 该 SKU 尚未建立 embedding，禁止伪造相似度
     reference_image: str  # 该 SKU 最相似的那张参考图 URL
+    has_embedding: bool = True  # False = 未建立图库，只能靠人工肉眼比对选择
+    image_count: int = 0  # 该 SKU 已上传的参考图数量
 
 
 def cosine_similarity(query: np.ndarray, matrix: np.ndarray) -> np.ndarray:
@@ -117,6 +124,80 @@ def match_query_embedding(query: np.ndarray, db: Session) -> list[Candidate]:
     # 相似度倒序；不做数量截断，所有 active 且有 embedding 的 SKU 都返回
     candidates.sort(key=lambda c: c.similarity, reverse=True)
     return candidates
+
+
+def load_active_products(db: Session) -> list[Product]:
+    """取出全部 active SKU（含参考图）；inactive 一律排除。"""
+    return list(
+        db.execute(
+            select(Product)
+            .options(selectinload(Product.images))
+            .where(Product.status == "active")
+            .order_by(Product.id)
+        ).scalars().all()
+    )
+
+
+def match_all_active_skus(query: np.ndarray, db: Session) -> list[Candidate]:
+    """候选列表 = 有 embedding 的按相似度倒序 + 未建立图库的排最后。
+
+    业务要求：每个 active SKU 都必须能被人工选择。没有参考图 embedding 的
+    SKU 拿不到真实相似度，因此排在所有有相似度候选之后，similarity 记 None，
+    由前端显示「未建立图库」，绝不编造一个假的相似度混进排序里。
+    """
+    matched = match_query_embedding(query, db)  # 已倒序，且跳过无 embedding 的 SKU
+    done_ids = {c.product_id for c in matched}
+
+    trailing: list[Candidate] = []
+    for product in load_active_products(db):
+        if product.id in done_ids:
+            continue
+        images = product.images or []
+        first_image = images[0] if images else None
+        # has_embedding 指"图库里存过 embedding"（维度与当前模型不一致时仍为 True，
+        # 只是无法参与本次匹配，前端据此提示"需重建图库"而不是"未建立图库"）
+        trailing.append(
+            Candidate(
+                product_id=product.id,
+                sku=product.sku,
+                name=product.name,
+                size=product.size,
+                style=product.style,
+                sale_price=product.sale_price,
+                similarity=None,
+                reference_image=first_image.image_url if first_image else "",
+                has_embedding=any(img.embedding is not None for img in images),
+                image_count=len(images),
+            )
+        )
+    return matched + trailing
+
+
+def list_active_sku_candidates(db: Session) -> list[Candidate]:
+    """全部 active SKU 的无相似度候选（AI 不可用时的纯人工兜底列表）。
+
+    场景：图库完全没有 embedding 或本次查询图片无法向量化时，
+    仍然要让工作人员能看到并人工选择所有 SKU。similarity 一律 None。
+    """
+    result: list[Candidate] = []
+    for product in load_active_products(db):
+        images = product.images or []
+        first_image = images[0] if images else None
+        result.append(
+            Candidate(
+                product_id=product.id,
+                sku=product.sku,
+                name=product.name,
+                size=product.size,
+                style=product.style,
+                sale_price=product.sale_price,
+                similarity=None,
+                reference_image=first_image.image_url if first_image else "",
+                has_embedding=any(img.embedding is not None for img in images),
+                image_count=len(images),
+            )
+        )
+    return result
 
 
 def has_any_embedding(db: Session) -> bool:
