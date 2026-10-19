@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>商品管理 - 毛绒娃娃收货系统</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 16px 28px; }
+  header h1 { margin: 0; font-size: 20px; }
+  .container { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  h2 { font-size: 16px; margin: 0 0 16px; color: #34495e; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ecf0f1; }
+  th { background: #f8f9fa; font-weight: 600; color: #7f8c8d; }
+  tr:hover { background: #fafbfc; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+  .badge.active { background: #e8f5e9; color: #2e7d32; }
+  .badge.inactive { background: #ffebee; color: #c62828; }
+  .btn { display: inline-block; padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; text-decoration: none; color: #fff; }
+  .btn-primary { background: #3498db; }
+  .btn-warn { background: #e67e22; }
+  .btn-danger { background: #e74c3c; }
+  .btn-link { background: transparent; color: #3498db; padding: 6px 8px; }
+  form.inline { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  label { display: flex; flex-direction: column; font-size: 12px; color: #7f8c8d; gap: 4px; }
+  input, select { padding: 7px 10px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; min-width: 120px; }
+  .msg { margin-top: 12px; font-size: 13px; }
+  .msg.success { color: #2e7d32; }
+  .msg.error { color: #c62828; }
+</style>
+</head>
+<body>
+<header><h1>毛绒娃娃收货系统 · 商品管理</h1></header>
+<div class="container">
+
+  <div class="card">
+    <h2>新增商品</h2>
+    <form class="inline" id="create-form" onsubmit="return createProduct(event)">
+      <label>SKU<input name="sku" required maxlength="32" placeholder="S001"></label>
+      <label>商品名称<input name="name" required maxlength="64" placeholder="星黛露"></label>
+      <label>尺寸<input name="size" required maxlength="32" placeholder="20cm"></label>
+      <label>款式<input name="style" required maxlength="32" placeholder="普通款"></label>
+      <label>固定售价(元)<input name="sale_price" type="number" step="1" min="0" required placeholder="40"></label>
+      <button type="submit" class="btn btn-primary">新增</button>
+    </form>
+    <div id="create-msg" class="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>商品列表（{{ products|length }} 个 SKU）</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th><th>商品名称</th><th>尺寸</th><th>款式</th>
+          <th>固定售价</th><th>图片数</th><th>状态</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr id="row-{{ p.id }}">
+          <td><strong>{{ p.sku }}</strong></td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.size }}</td>
+          <td>{{ p.style }}</td>
+          <td>¥{{ p.sale_price }}</td>
+          <td>{{ p.image_count }}</td>
+          <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+          <td>
+            <a class="btn btn-link" href="/admin/products/{{ p.id }}">详情/图片</a>
+            <button class="btn btn-danger" onclick="deleteProduct({{ p.id }}, '{{ p.sku }}')">停用</button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not products %}
+        <tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px;">暂无商品，请新增</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function showMsg(elId, text, ok) {
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'success' : 'error');
+}
+
+async function createProduct(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = {
+    sku: form.sku.value.trim(),
+    name: form.name.value.trim(),
+    size: form.size.value.trim(),
+    style: form.style.value.trim(),
+    sale_price: parseInt(form.sale_price.value, 10),
+  };
+  try {
+    const res = await fetch('/products', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || '创建失败');
+    }
+    showMsg('create-msg', '创建成功，正在刷新…', true);
+    setTimeout(() => location.reload(), 600);
+  } catch (err) {
+    showMsg('create-msg', err.message, false);
+  }
+  return false;
+}
+
+async function deleteProduct(id, sku) {
+  if (!confirm(`确定要停用 SKU ${sku} 吗？停用后将不再作为 AI 识别候选（可在详情页重新启用）。`)) return;
+  try {
+    const res = await fetch(`/products/${id}`, {method: 'DELETE'});
+    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || '操作失败'); }
+    location.reload();
+  } catch (err) { alert(err.message); }
+}
+</script>
+</body>
+</html>

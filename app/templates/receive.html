@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>收货登记 - 毛绒娃娃收货系统</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6fa; color: #2c3e50; }
+    header { background: #2c3e50; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 18px; }
+    header nav a { color: #bdc3c7; text-decoration: none; font-size: 14px; margin-left: 16px; }
+    header nav a:hover { color: #fff; }
+    .container { max-width: 640px; margin: 20px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    h2 { font-size: 16px; margin: 0 0 14px; color: #34495e; }
+    label { display: block; font-size: 13px; color: #7f8c8d; margin: 14px 0 6px; }
+    select, input { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 15px; }
+    .info-box { background: #f8f9fa; border: 1px solid #ecf0f1; border-radius: 8px; padding: 14px 16px; margin-top: 14px; font-size: 15px; line-height: 2; }
+    .info-box .price { color: #e67e22; font-weight: 700; font-size: 17px; }
+    .btn { border: none; border-radius: 6px; padding: 12px 20px; font-size: 15px; cursor: pointer; color: #fff; width: 100%; margin-top: 18px; }
+    .btn-primary { background: #3498db; }
+    .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; }
+    .btn-success { background: #27ae60; }
+    .msg { margin-top: 10px; font-size: 13px; min-height: 18px; }
+    .msg.error { color: #c62828; }
+    .msg.info { color: #2980b9; }
+    .success-head { text-align: center; color: #27ae60; font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .result { font-size: 15px; line-height: 2.1; }
+    .result strong { color: #2c3e50; }
+    .result .code { color: #27ae60; font-weight: 700; }
+    .result .barcode { font-family: Consolas, monospace; font-weight: 700; letter-spacing: 1px; }
+    .hint { font-size: 12px; color: #95a5a6; margin-top: 6px; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>毛绒娃娃 · 收货登记</h1>
+    <nav>
+      <a href="/vision">视觉识别</a>
+      <a href="/inventory">库存查询</a>
+      <a href="/admin/products">商品管理</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card" id="form-card">
+      <h2>商品款式（SKU）</h2>
+      <select id="sku-select" onchange="onSkuChange()">
+        <option value="">-- 请选择 SKU --</option>
+        {% for p in products %}
+        <option value="{{ p.id }}" {% if selected_id == p.id %}selected{% endif %}>
+          {{ p.sku }} | {{ p.name }} {{ p.size }} {{ p.style }} | 售价{{ p.sale_price }}元
+        </option>
+        {% endfor %}
+      </select>
+      <div class="hint">售价由 SKU 决定，收货时不可修改。</div>
+
+      <div class="info-box" id="product-info" style="display:none;">
+        商品：<strong id="pi-name"></strong><br>
+        尺寸：<strong id="pi-size"></strong><br>
+        款式：<strong id="pi-style"></strong><br>
+        固定售价：<span class="price" id="pi-price"></span>元
+      </div>
+
+      <label for="cost-input">实际回收成本（元）</label>
+      <input type="number" id="cost-input" step="0.01" min="0" placeholder="例如：18 或 18.50">
+
+      <button class="btn btn-primary" id="submit-btn" onclick="submitReceive()">确认入库</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <div class="card" id="success-card" style="display:none;">
+      <div class="success-head">入库成功</div>
+      <div class="result">
+        库存编号：<span class="code" id="r-code"></span><br>
+        SKU：<strong id="r-sku"></strong><br>
+        商品：<strong id="r-name"></strong><br>
+        尺寸：<strong id="r-size"></strong><br>
+        款式：<strong id="r-style"></strong><br>
+        回收成本：<strong id="r-cost"></strong>元<br>
+        固定售价：<strong id="r-price"></strong>元<br>
+        条码：<span class="barcode" id="r-barcode"></span>
+        <div class="hint" id="r-barcode-hint" style="display:none;">成本含小数/超出 0~99 范围，当前条码规则无法编码，未生成条码。</div>
+      </div>
+      <button class="btn btn-success" onclick="location.reload()">完成</button>
+    </div>
+  </div>
+
+  <script>
+    const products = {{ products | tojson }};
+    let current = null;
+
+    function findProduct(id) {
+      return products.find(p => p.id === Number(id)) || null;
+    }
+
+    function onSkuChange() {
+      const id = document.getElementById('sku-select').value;
+      current = findProduct(id);
+      const box = document.getElementById('product-info');
+      if (!current) { box.style.display = 'none'; return; }
+      document.getElementById('pi-name').textContent = current.name;
+      document.getElementById('pi-size').textContent = current.size;
+      document.getElementById('pi-style').textContent = current.style;
+      document.getElementById('pi-price').textContent = current.sale_price;
+      box.style.display = 'block';
+    }
+
+    function showMsg(text, cls) {
+      const el = document.getElementById('msg');
+      el.textContent = text || '';
+      el.className = 'msg ' + (cls || '');
+    }
+
+    async function submitReceive() {
+      if (!current) { showMsg('请先选择商品款式（SKU）', 'error'); return; }
+      const cost = document.getElementById('cost-input').value.trim();
+      if (cost === '' || isNaN(Number(cost)) || Number(cost) < 0) {
+        showMsg('请输入正确的回收成本（>=0，最多两位小数）', 'error'); return;
+      }
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      showMsg('入库中…', 'info');
+      try {
+        // 成本以字符串发送，避免 JS float 精度问题，后端按 Decimal 精确解析
+        const res = await fetch('/inventory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: current.id, recovery_cost: cost }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+          throw new Error(detail || '入库失败');
+        }
+        // 成功：展示入库结果（售价以服务端返回为准，不用页面上的值）
+        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('r-code').textContent = data.inventory_code;
+        document.getElementById('r-sku').textContent = data.sku;
+        document.getElementById('r-name').textContent = data.name;
+        document.getElementById('r-size').textContent = data.size;
+        document.getElementById('r-style').textContent = data.style;
+        document.getElementById('r-cost').textContent = data.recovery_cost;
+        document.getElementById('r-price').textContent = data.sale_price;
+        if (data.barcode) {
+          document.getElementById('r-barcode').textContent = data.barcode;
+        } else {
+          document.getElementById('r-barcode').textContent = '（未生成）';
+          document.getElementById('r-barcode-hint').style.display = 'block';
+        }
+        document.getElementById('success-card').style.display = 'block';
+      } catch (err) {
+        showMsg(err.message, 'error');
+        btn.disabled = false;
+      }
+    }
+
+    // 从 /vision 跳转来时自动填入 SKU 信息
+    onSkuChange();
+  </script>
+</body>
+
+</html>

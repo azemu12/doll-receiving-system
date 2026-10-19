@@ -1,0 +1,19 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+SQLAlchemy>=2.0,<3.0
+PyMySQL>=1.1
+cryptography>=42.0
+pydantic>=2.7
+pydantic-settings>=2.3
+python-dotenv>=1.0
+pytest>=8.0
+jinja2>=3.1
+python-multipart>=0.0.9
+httpx>=0.27
+# 第3阶段：视觉识别（CLIP 图片 embedding + 相似度检索）
+# 注意：CPU 版 torch 请用 README 中的命令安装（体积更小）
+torch>=2.2
+torchvision
+open_clip_torch>=2.24
+pillow>=10
+numpy>=1.26

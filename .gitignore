@@ -1,0 +1,18 @@
+# 环境与密钥
+.env
+
+# 用户上传的商品图片（本地数据，不入库）
+uploads/
+
+# 本地实拍素材（体积大，非代码资产）
+图片/
+
+# 本地 AI 助手工作数据
+.workbuddy/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/

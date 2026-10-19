@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>视觉识别 - 毛绒娃娃收货系统</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #2c3e50;
+    }
+
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    header a {
+      color: #bdc3c7;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 0 0 14px;
+      color: #34495e;
+    }
+
+    .upload-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input[type=file] {
+      font-size: 14px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .btn-primary {
+      background: #3498db;
+    }
+
+    .btn-primary:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    .btn-success {
+      background: #27ae60;
+    }
+
+    .btn-gray {
+      background: #95a5a6;
+    }
+
+    .query-preview {
+      margin-top: 14px;
+    }
+
+    .query-preview img {
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 8px;
+      border: 1px solid #ecf0f1;
+    }
+
+    .cand-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cand {
+      display: flex;
+      gap: 14px;
+      border: 2px solid #ecf0f1;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      align-items: center;
+    }
+
+    .cand.selected {
+      border-color: #27ae60;
+      background: #f1faf3;
+    }
+
+    .cand img {
+      width: 110px;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #f0f2f5;
+      flex-shrink: 0;
+    }
+
+    .cand .info {
+      flex: 1;
+    }
+
+    .cand .title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .cand .meta {
+      font-size: 13px;
+      color: #7f8c8d;
+      line-height: 1.7;
+    }
+
+    .cand .price {
+      color: #e67e22;
+      font-weight: 700;
+    }
+
+    .cand .sim {
+      display: inline-block;
+      background: #eef4fb;
+      color: #2980b9;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+
+    .rank {
+      font-size: 13px;
+      color: #95a5a6;
+      width: 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .other-card {
+      border: 2px dashed #bdc3c7;
+      justify-content: center;
+    }
+
+    .other-card.selected {
+      border-style: solid;
+      border-color: #27ae60;
+      background: #f1faf3;
+    }
+
+    .select-panel {
+      position: sticky;
+      bottom: 10px;
+    }
+
+    .msg {
+      margin-top: 10px;
+      font-size: 13px;
+      min-height: 18px;
+    }
+
+    .msg.error {
+      color: #c62828;
+    }
+
+    .msg.info {
+      color: #2980b9;
+    }
+
+    .result {
+      font-size: 15px;
+      line-height: 2;
+    }
+
+    .result strong {
+      color: #27ae60;
+      font-size: 17px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #95a5a6;
+      margin-top: 6px;
+    }
+
+    .loading {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>毛绒娃娃 · 视觉识别</h1>
+    <nav>
+      <a href="/receive" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">收货登记</a>
+      <a href="/inventory" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">库存查询</a>
+      <a href="/admin/products" style="color:#bdc3c7; font-size:14px; margin-left:16px; text-decoration:none;">商品管理</a>
+    </nav>
+  </header>
+  <div class="container">
+
+    <div class="card">
+      <h2>上传 / 拍摄娃娃图片</h2>
+      <div class="upload-row">
+        <input type="file" id="file-input" accept="image/*" capture="environment">
+        <button class="btn btn-primary" id="match-btn" onclick="match()">开始识别</button>
+      </div>
+      <div class="hint">支持 jpg / jpeg / png / webp，最大 10MB。手机浏览器可直接调用相机拍照。</div>
+      <div id="msg" class="msg"></div>
+      <div class="query-preview" id="preview-box" style="display:none;">
+        <img id="preview-img" alt="待识别图片">
+      </div>
+    </div>
+
+    <div class="card" id="result-card" style="display:none;">
+      <h2>AI 匹配结果（请人工选择正确款式，系统不会自动选择）</h2>
+      <div id="cand-list" class="cand-list"></div>
+    </div>
+
+    <div class="card select-panel" id="select-panel" style="display:none;">
+      <div id="selected-info" class="result"></div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-success" onclick="confirmChoice()">确认结果</button>
+      </div>
+    </div>
+
+    <div class="card" id="final-panel" style="display:none;">
+      <h2>识别确认成功</h2>
+      <div id="final-info" class="result"></div>
+      <div class="hint">已确认的 SKU 将进入收货登记：录入该只娃娃的实际回收成本后入库并生成条码。</div>
+      <div style="margin-top:12px; display:flex; gap:10px;">
+        <a class="btn btn-success" id="receive-link" href="#" style="display:none; text-decoration:none; text-align:center; flex:1;">进入收货登记</a>
+        <button class="btn btn-gray" onclick="location.reload()" style="flex:1;">再识别一只</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let candidates = [];
+    let selected = null; // {type:'sku', ...} 或 {type:'other'}
+
+    function showMsg(text, cls) {
+      const el = document.getElementById('msg');
+      el.textContent = text || '';
+      el.className = 'msg ' + (cls || '');
+    }
+
+    // 选择文件后本地预览（不上传，等待点击"开始识别"）
+    document.getElementById('file-input').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      document.getElementById('preview-img').src = url;
+      document.getElementById('preview-box').style.display = 'block';
+    });
+
+    async function match() {
+      const input = document.getElementById('file-input');
+      if (!input.files || !input.files[0]) { showMsg('请先选择或拍摄一张图片', 'error'); return; }
+      const fd = new FormData();
+      fd.append('file', input.files[0]);
+      showMsg('识别中，请稍候…', 'info');
+      document.getElementById('result-card').style.display = 'none';
+      document.getElementById('select-panel').style.display = 'none';
+      document.getElementById('final-panel').style.display = 'none';
+      selected = null;
+
+      try {
+        const res = await fetch('/vision/match', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) { throw new Error(data.detail || '识别失败'); }
+        candidates = data.candidates || [];
+        renderCandidates();
+        showMsg('');
+      } catch (err) {
+        showMsg(err.message, 'error');
+      }
+    }
+
+    function renderCandidates() {
+      const box = document.getElementById('cand-list');
+      box.innerHTML = '';
+
+      const circles = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+      candidates.forEach((c, i) => {
+        const rankLabel = i < circles.length ? circles[i] : String(i + 1);
+        const div = document.createElement('div');
+        div.className = 'cand';
+        div.id = 'cand-' + i;
+        div.innerHTML = `
+      <div class="rank">${rankLabel}</div>
+      <img src="${c.reference_image}" alt="参考图">
+      <div class="info">
+        <div class="title">${c.name} ${c.size} ${c.style}<span class="sim">相似度 ${(c.similarity * 100).toFixed(1)}%</span></div>
+        <div class="meta">
+          SKU：${c.sku}<br>
+          售价：<span class="price">${c.sale_price}元</span>（固定售价，来自SKU主档）
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="chooseSku(${i})">选择这个款式</button>
+    `;
+        box.appendChild(div);
+      });
+
+      // "其他"永远是一个人工选项，不是 products 中的 SKU
+      const other = document.createElement('div');
+      other.className = 'cand other-card';
+      other.id = 'cand-other';
+      other.innerHTML = `
+    <div class="info" style="text-align:center;">
+      <div class="title">其他</div>
+      <div class="meta">以上都不是 / 图库中没有这个款式</div>
+    </div>
+    <button class="btn btn-gray" onclick="chooseOther()">选择「其他」</button>
+  `;
+      box.appendChild(other);
+
+      document.getElementById('result-card').style.display = 'block';
+    }
+
+    function chooseSku(i) {
+      selected = Object.assign({ type: 'sku' }, candidates[i]);
+      document.querySelectorAll('.cand').forEach(el => el.classList.remove('selected'));
+      document.getElementById('cand-' + i).classList.add('selected');
+      const c = selected;
+      document.getElementById('selected-info').innerHTML = `
+    已选择：<br>
+    <strong>${c.name} ${c.size} ${c.style}</strong><br>
+    SKU：${c.sku}<br>
+    固定售价：${c.sale_price}元`;
+      document.getElementById('select-panel').style.display = 'block';
+      document.getElementById('final-panel').style.display = 'none';
+      document.getElementById('select-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function chooseOther() {
+      selected = { type: 'other' };
+      document.querySelectorAll('.cand').forEach(el => el.classList.remove('selected'));
+      document.getElementById('cand-other').classList.add('selected');
+      document.getElementById('selected-info').innerHTML = `已选择：<strong>其他</strong>`;
+      document.getElementById('select-panel').style.display = 'block';
+      document.getElementById('final-panel').style.display = 'none';
+      document.getElementById('select-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // 纯前端确认：确认后可跳转收货登记页（携带 product_id 自动填入 SKU 信息）
+    function confirmChoice() {
+      if (!selected) return;
+      const info = document.getElementById('final-info');
+      const receiveLink = document.getElementById('receive-link');
+      if (selected.type === 'other') {
+        info.innerHTML = `已选择：<strong>其他</strong><br>不会创建新的商品记录。`;
+        receiveLink.style.display = 'none';
+      } else {
+        info.innerHTML = `
+      SKU：<strong>${selected.sku}</strong><br>
+      商品：<strong>${selected.name} ${selected.size} ${selected.style}</strong><br>
+      售价：<strong>${selected.sale_price}元</strong>（固定售价，收货时不可修改）`;
+        receiveLink.href = `/receive?product_id=${selected.product_id}`;
+        receiveLink.style.display = 'inline-block';
+      }
+      document.getElementById('final-panel').style.display = 'block';
+      document.getElementById('final-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  </script>
+</body>
+
+</html>

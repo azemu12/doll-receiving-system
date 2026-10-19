@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ product.name }} ({{ product.sku }}) - 商品详情</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #2c3e50;
+    }
+
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    header a {
+      color: #bdc3c7;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 0 0 16px;
+      color: #34495e;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      color: #7f8c8d;
+      gap: 4px;
+    }
+
+    input,
+    select {
+      padding: 7px 10px;
+      border: 1px solid #dcdfe6;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 160px;
+    }
+
+    input[readonly] {
+      background: #f0f2f5;
+      color: #7f8c8d;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .btn-primary {
+      background: #3498db;
+    }
+
+    .btn-warn {
+      background: #e67e22;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+    }
+
+    .msg {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .msg.success {
+      color: #2e7d32;
+    }
+
+    .msg.error {
+      color: #c62828;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .info-item {
+      background: #f8f9fa;
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+
+    .info-item .k {
+      font-size: 12px;
+      color: #95a5a6;
+    }
+
+    .info-item .v {
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .img-card {
+      border: 1px solid #ecf0f1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
+    .img-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .img-card .meta {
+      padding: 8px;
+      font-size: 12px;
+      color: #7f8c8d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .empty {
+      text-align: center;
+      color: #aaa;
+      padding: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>{{ product.name }} · {{ product.sku }}</h1>
+    <a href="/admin/products">← 返回列表</a>
+  </header>
+  <div class="container">
+
+    <div class="card">
+      <h2>商品信息</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="k">SKU（不可修改）</div>
+          <div class="v">{{ product.sku }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">商品名称</div>
+          <div class="v">{{ product.name }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">尺寸</div>
+          <div class="v">{{ product.size }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">款式</div>
+          <div class="v">{{ product.style }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">固定售价</div>
+          <div class="v">¥{{ product.sale_price }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">状态</div>
+          <div class="v">{{ product.status }}</div>
+        </div>
+        <div class="info-item">
+          <div class="k">参考图片数</div>
+          <div class="v">{{ product.image_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>编辑商品（SKU 不可修改）</h2>
+      <form class="form-row" id="edit-form" onsubmit="return saveProduct(event)">
+        <label>商品名称<input name="name" value="{{ product.name }}" required maxlength="64"></label>
+        <label>尺寸<input name="size" value="{{ product.size }}" required maxlength="32"></label>
+        <label>款式<input name="style" value="{{ product.style }}" required maxlength="32"></label>
+        <label>固定售价(元)<input name="sale_price" type="number" step="1" min="0" value="{{ product.sale_price }}"
+            required></label>
+        <label>状态
+          <select name="status">
+            <option value="active" {{ 'selected' if product.status=='active' else '' }}>active（在售，可作AI候选）</option>
+            <option value="inactive" {{ 'selected' if product.status=='inactive' else '' }}>inactive（停用，不作AI候选）</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary">保存修改</button>
+      </form>
+      <div id="edit-msg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>参考图片（未来用于视觉识别，可上传多张）</h2>
+      <p style="font-size:12px;color:#95a5a6;margin:0 0 12px;">
+        Embedding 不会自动生成。上传图片后，请在命令行运行
+        <code>python -m app.vision.build_embeddings</code> 批量生成（已有 embedding 的图片会跳过，加 --force 可强制重建）。
+      </p>
+      <form id="upload-form" onsubmit="return uploadImage(event)"
+        style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <input type="file" id="file-input" name="file" accept="image/jpeg,image/png,image/webp" required>
+        <button type="submit" class="btn btn-warn">上传图片</button>
+        <span style="font-size:12px;color:#aaa;">支持 jpg / jpeg / png / webp</span>
+      </form>
+      <div id="upload-msg" class="msg"></div>
+
+      <div id="img-grid" class="img-grid" style="margin-top:18px;">
+        {% for img in product.images %}
+        <div class="img-card" id="img-{{ img.id }}">
+          <img src="{{ img.image_url }}" alt="图片 {{ img.id }}">
+          <div class="meta">
+            <span>#{{ img.id }}</span>
+            <button class="btn btn-danger" onclick="deleteImage({{ img.id }})">删除</button>
+          </div>
+        </div>
+        {% endfor %}
+        {% if not product.images %}
+        <div class="empty">暂无图片，请上传</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const productId = {{ product.id }};
+
+    function showMsg(elId, text, ok) {
+      const el = document.getElementById(elId);
+      el.textContent = text;
+      el.className = 'msg ' + (ok ? 'success' : 'error');
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const f = e.target;
+      const data = {
+        name: f.name.value.trim(),
+        size: f.size.value.trim(),
+        style: f.style.value.trim(),
+        sale_price: parseInt(f.sale_price.value, 10),
+        status: f.status.value,
+      };
+      try {
+        const res = await fetch(`/products/${productId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.detail || '保存失败'); }
+        showMsg('edit-msg', '保存成功', true);
+        setTimeout(() => location.reload(), 600);
+      } catch (err) { showMsg('edit-msg', err.message, false); }
+      return false;
+    }
+
+    async function uploadImage(e) {
+      e.preventDefault();
+      const input = document.getElementById('file-input');
+      if (!input.files || !input.files[0]) { alert('请选择图片'); return false; }
+      const fd = new FormData();
+      fd.append('file', input.files[0]);
+      try {
+        const res = await fetch(`/products/${productId}/images`, { method: 'POST', body: fd });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.detail || '上传失败'); }
+        showMsg('upload-msg', '上传成功', true);
+        setTimeout(() => location.reload(), 600);
+      } catch (err) { showMsg('upload-msg', err.message, false); }
+      return false;
+    }
+
+    async function deleteImage(imageId) {
+      if (!confirm('确定删除这张图片？数据库记录和本地文件都会删除。')) return;
+      try {
+        const res = await fetch(`/products/${productId}/images/${imageId}`, { method: 'DELETE' });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.detail || '删除失败'); }
+        const node = document.getElementById('img-' + imageId);
+        if (node) node.remove();
+        showMsg('upload-msg', '图片已删除', true);
+      } catch (err) { alert(err.message); }
+    }
+  </script>
+</body>
+
+</html>

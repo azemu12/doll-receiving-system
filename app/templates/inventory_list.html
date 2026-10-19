@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>库存查询 - 毛绒娃娃收货系统</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6fa; color: #2c3e50; }
+    header { background: #2c3e50; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 18px; }
+    header nav a { color: #bdc3c7; text-decoration: none; font-size: 14px; margin-left: 16px; }
+    header nav a:hover { color: #fff; }
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    h2 { font-size: 16px; margin: 0 0 14px; color: #34495e; }
+    form.search { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    form.search label { display: flex; flex-direction: column; font-size: 12px; color: #7f8c8d; gap: 4px; }
+    form.search input { padding: 8px 10px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; min-width: 140px; }
+    .btn { display: inline-block; padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; color: #fff; background: #3498db; }
+    .btn-gray { background: #95a5a6; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ecf0f1; white-space: nowrap; }
+    th { background: #f8f9fa; font-weight: 600; color: #7f8c8d; }
+    tr:hover { background: #fafbfc; }
+    .code { color: #27ae60; font-weight: 700; }
+    .barcode { font-family: Consolas, monospace; letter-spacing: 1px; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; background: #e8f5e9; color: #2e7d32; }
+    .empty { color: #95a5a6; font-size: 14px; padding: 18px 0; text-align: center; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>毛绒娃娃 · 库存查询</h1>
+    <nav>
+      <a href="/vision">视觉识别</a>
+      <a href="/receive">收货登记</a>
+      <a href="/admin/products">商品管理</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>搜索</h2>
+      <form class="search" method="get" action="/inventory">
+        <label>SKU<input name="sku" value="{{ query.sku }}" placeholder="如 S001"></label>
+        <label>商品名称<input name="name" value="{{ query.name }}" placeholder="如 星黛露"></label>
+        <label>库存编号<input name="code" value="{{ query.code }}" placeholder="如 D000001"></label>
+        <button type="submit" class="btn">搜索</button>
+        <a class="btn btn-gray" href="/inventory">重置</a>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>库存列表（{{ inventories | length }} 条，按收货时间倒序）</h2>
+      {% if inventories %}
+      <table>
+        <thead>
+          <tr>
+            <th>库存编号</th><th>SKU</th><th>商品</th><th>尺寸</th><th>款式</th>
+            <th>回收成本</th><th>固定售价</th><th>条码</th><th>状态</th><th>收货时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in inventories %}
+          <tr>
+            <td class="code">{{ inv.inventory_code }}</td>
+            <td>{{ inv.product.sku }}</td>
+            <td>{{ inv.product.name }}</td>
+            <td>{{ inv.product.size }}</td>
+            <td>{{ inv.product.style }}</td>
+            <td>{{ inv.recovery_cost }}元</td>
+            <td>{{ inv.product.sale_price }}元</td>
+            <td class="barcode">{{ inv.barcode or "—" }}</td>
+            <td><span class="badge">{{ "在库" if inv.status == "in_stock" else inv.status }}</span></td>
+            <td>{{ inv.received_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">暂无库存记录</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+
+</html>
